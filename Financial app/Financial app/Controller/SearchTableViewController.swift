@@ -43,6 +43,7 @@ class SearchTableViewController: UITableViewController, UIAnimatable {
         $searchQuery
             .debounce(for: .milliseconds(750), scheduler: RunLoop.main)
             .sink { [weak self] searchQuery in
+                guard !searchQuery.isEmpty else { return }
                 guard let self = self else { return }
                 showLoadingAnimation()
                 self.apiService.fetchSymbolsPublisher(keywords: searchQuery).sink { completion in
@@ -90,6 +91,37 @@ class SearchTableViewController: UITableViewController, UIAnimatable {
         return cell
     }
     
+    override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        if let searchResults = self.searchResults {
+            let searchResult = searchResults.items[indexPath.item]
+            let symbol = searchResult.symbol
+            handleSelection(for: symbol, searchResult: searchResult)
+        }
+    }
+    
+    private func handleSelection(for symbol: String, searchResult: SearchResult) {
+        showLoadingAnimation()
+        apiService.fetchTimeSeriesMonthlyAdjustedPublisher(keywords: symbol).sink { [weak self] completionResult in
+            self?.hideLoadingAnimation()
+            switch completionResult {
+            case .finished: break
+            case .failure(let error):
+                print("DEBUG: Fetch failed: \(error)")
+            }
+        } receiveValue: { [weak self] timeSeriesMonthlyAdjusted in
+            self?.hideLoadingAnimation()
+            let asset = Asset(searchResult: searchResult, timeSeriesMonthlyAdjusted: timeSeriesMonthlyAdjusted)
+            self?.performSegue(withIdentifier: "showCalculator", sender: asset)
+        }.store(in: &cancellables)
+    }
+    
+    override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
+        if segue.identifier == "showCalculator",
+           let destination = segue.destination as? CalculatorTableViewController,
+            let asset = sender as? Asset {
+            destination.asset = asset
+        }
+    }
 }
 
 extension SearchTableViewController: UISearchResultsUpdating, UISearchControllerDelegate {
