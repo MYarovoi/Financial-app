@@ -18,6 +18,11 @@ class CalculatorTableViewController: UITableViewController {
     @IBOutlet var currencyLabels: [UILabel]!
     @IBOutlet weak var investmentAmountCurrencyLabel: UILabel!
     @IBOutlet weak var dateSlider: UISlider!
+    @IBOutlet weak var currentValueLabel: UILabel!
+    @IBOutlet weak var investmentAmountLabel: UILabel!
+    @IBOutlet weak var gainLabel: UILabel!
+    @IBOutlet weak var yieldLabel: UILabel!
+    @IBOutlet weak var anualReturnLabel: UILabel!
     
     var asset: Asset?
     @Published private var initialDateOfInvestmentIndex: Int?
@@ -25,6 +30,7 @@ class CalculatorTableViewController: UITableViewController {
     @Published private var monthlyDollarCostAveragingAmount: Int?
     
     private var cancellables = Set<AnyCancellable>()
+    private let dcaService = DCAService()
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -43,7 +49,7 @@ class CalculatorTableViewController: UITableViewController {
     }
     
     private func setupDateSlider() {
-        if let count = asset?.timeSeriesMonthlyAdjusted.getyMonthInfo().count {
+        if let count = asset?.timeSeriesMonthlyAdjusted.getMonthInfo().count {
             let dateSliderCount = count - 1
             dateSlider.maximumValue = dateSliderCount.floatValue
         }
@@ -54,7 +60,7 @@ class CalculatorTableViewController: UITableViewController {
             guard let index = index else { return }
             self?.dateSlider.value = index.floatValue
             
-            if let monthInfo = self?.asset?.timeSeriesMonthlyAdjusted.getyMonthInfo(), index >= 0, index < monthInfo.count {
+            if let monthInfo = self?.asset?.timeSeriesMonthlyAdjusted.getMonthInfo(), index >= 0, index < monthInfo.count {
                 let dateString = monthInfo[index].date.MMYYFormat
                 self?.initialDateOfInvestment.text = dateString
             }
@@ -72,8 +78,21 @@ class CalculatorTableViewController: UITableViewController {
             self?.monthlyDollarCostAveragingAmount = Int(text) ?? 0
         }.store(in: &cancellables)
         
-        Publishers.CombineLatest3($initialInvestmentAmount, $monthlyDollarCostAveragingAmount, $initialDateOfInvestmentIndex).sink { initialInvestmentAmount, monthlyDollarCostAveragingAmount, initialDateOfInvestmentIndex in
-            <#code#>
+        Publishers.CombineLatest3($initialInvestmentAmount, $monthlyDollarCostAveragingAmount, $initialDateOfInvestmentIndex).sink { [weak self] initialInvestmentAmount, monthlyDollarCostAveragingAmount, initialDateOfInvestmentIndex in
+            
+            guard let initialInvestmentAmount = initialInvestmentAmount,
+                  let monthlyDollarCostAveragingAmount = monthlyDollarCostAveragingAmount,
+                  let initialDateOfInvestmentIndex = initialDateOfInvestmentIndex,
+                  let asset = self?.asset else {  return }
+            
+            let result = self?.dcaService.calculate(asset: asset, initialInvestmentAmount: initialInvestmentAmount.doubleValue, monthlyDollarCostAvetagingAmount: monthlyDollarCostAveragingAmount.doubleValue, initialDateOfInvestmentIndex: initialDateOfInvestmentIndex)
+            
+            self?.currentValueLabel.backgroundColor = (result?.isProfitable == true) ? .themeGreenShade : .themeRedShade
+            self?.currentValueLabel.text = result?.currentValue.twoDecimalPlaceString
+            self?.investmentAmountLabel.text = result?.investmentAmount.stringValue
+            self?.gainLabel.text = result?.gain.stringValue
+            self?.yieldLabel.text = result?.yield.stringValue
+            self?.anualReturnLabel.text = result?.annualReturn.stringValue
         }.store(in: &cancellables)
     }
     
@@ -96,7 +115,7 @@ class CalculatorTableViewController: UITableViewController {
     private func handleDateSelection(at index: Int) {
         guard navigationController?.visibleViewController is DateSelectionTableViewController else { return }
         navigationController?.popViewController(animated: true)
-        if let monthInfos = asset?.timeSeriesMonthlyAdjusted.getyMonthInfo() {
+        if let monthInfos = asset?.timeSeriesMonthlyAdjusted.getMonthInfo() {
             initialDateOfInvestmentIndex = index
             let monthInfo = monthInfos[index]
             let dateString = monthInfo.date.MMYYFormat

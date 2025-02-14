@@ -25,7 +25,7 @@ class DateSelectionTableViewController: UITableViewController {
     }
     
     private func setupMonthInfos() {
-        monthInfo = timeSeriesMonthlyAdjusted?.getyMonthInfo() ?? []
+        monthInfo = timeSeriesMonthlyAdjusted?.getMonthInfo() ?? []
     }
 }
 

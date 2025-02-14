@@ -11,4 +11,8 @@ extension Int {
     var floatValue: Float {
         Float(self)
     }
+    
+    var doubleValue: Double {
+        Double(self)
+    }
 }
