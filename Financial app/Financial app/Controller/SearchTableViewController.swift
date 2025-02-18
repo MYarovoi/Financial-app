@@ -54,6 +54,7 @@ class SearchTableViewController: UITableViewController, UIAnimatable {
                     case .finished: break
                     }
                 } receiveValue: { searchResults in
+                    self.tableView.isScrollEnabled = true
                     self.searchResults = searchResults
                     self.tableView.reloadData()
                 }.store(in: &self.cancellables)
@@ -71,6 +72,7 @@ class SearchTableViewController: UITableViewController, UIAnimatable {
     
     private func setuptableView() {
         tableView.tableFooterView = UIView()
+        tableView.isScrollEnabled = false
     }
 
     private func setupNavigationBar() {
@@ -113,6 +115,7 @@ class SearchTableViewController: UITableViewController, UIAnimatable {
             self?.hideLoadingAnimation()
             let asset = Asset(searchResult: searchResult, timeSeriesMonthlyAdjusted: timeSeriesMonthlyAdjusted)
             self?.performSegue(withIdentifier: "showCalculator", sender: asset)
+            self?.searchController.searchBar.text = ""
         }.store(in: &cancellables)
     }
     
@@ -131,7 +134,7 @@ extension SearchTableViewController: UISearchResultsUpdating, UISearchController
         self.searchQuery = searchQuery
     }
     
-    func willpresentSearchController(_ searchController: UISearchController) {
+    func willPresentSearchController(_ searchController: UISearchController) {
         mode = .search
     }
 }

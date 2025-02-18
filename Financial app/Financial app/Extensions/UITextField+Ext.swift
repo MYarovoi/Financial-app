@@ -10,14 +10,14 @@ import UIKit
 extension UITextField {
     func addDoneButton() {
         let screenWidth = UIScreen.main.bounds.width
-        let donetoolBar: UIToolbar = UIToolbar(frame: .init(x: 0, y: 0, width: screenWidth, height: 50))
-        donetoolBar.barStyle = .default
+        let doneToolBar: UIToolbar = UIToolbar(frame: .init(x: 0, y: 0, width: screenWidth, height: 50))
+        doneToolBar.barStyle = .default
         let flexBarButtonItem = UIBarButtonItem(barButtonSystemItem: .flexibleSpace, target: nil, action: nil)
         let doneBarButtonItem = UIBarButtonItem(title: "Done", style: .done, target: self, action: #selector(dismissKeyboard))
         let items = [flexBarButtonItem, doneBarButtonItem]
-        donetoolBar.items = items
-        donetoolBar.sizeToFit()
-        inputAccessoryView = donetoolBar
+        doneToolBar.items = items
+        doneToolBar.sizeToFit()
+        inputAccessoryView = doneToolBar
     }
     
     @objc func dismissKeyboard() {
