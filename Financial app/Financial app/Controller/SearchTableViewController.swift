@@ -9,7 +9,28 @@ import UIKit
 import Combine
 import MBProgressHUD
 
+class SearchViewModel {
+    struct Input {
+        let viewDidLoadPublisher: AnyPublisher<Void, Never>
+    }
+    
+    struct Output {
+        let setupNavigationBar: AnyPublisher<String, Never>
+    }
+    
+    func transform(input: Input) -> Output {
+        let setupNavigationBar: AnyPublisher<String, Never> = input.viewDidLoadPublisher.flatMap {
+            return Just("Search").eraseToAnyPublisher()
+        }.eraseToAnyPublisher()
+        
+        return .init(setupNavigationBar: setupNavigationBar)
+    }
+}
+
 class SearchTableViewController: UITableViewController, UIAnimatable {
+    
+    private let viewDidLoadSubject = PassthroughSubject<Void, Never>()
+    private let viewModel = SearchViewModel()
     
     private enum Mode {
         case onboarding
@@ -31,15 +52,29 @@ class SearchTableViewController: UITableViewController, UIAnimatable {
     private var searchResults: SearchResults?
     @Published private var mode: Mode = .onboarding
     private var cancellables = Set<AnyCancellable>()
+    
+    override func loadView() {
+        super.loadView()
+        observe()
+    }
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        setupNavigationBar()
-        observeForm()
+        viewDidLoadSubject.send()
         setuptableView()
     }
     
-    private func observeForm() {
+    private func observe() {
+        let input = SearchViewModel.Input(viewDidLoadPublisher: viewDidLoadSubject.eraseToAnyPublisher())
+        let output = viewModel.transform(input: input)
+        
+        output.setupNavigationBar
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] title in
+                self?.navigationItem.searchController = self?.searchController
+                self?.navigationItem.title = title
+            }.store(in: &cancellables)
+        
         $searchQuery
             .debounce(for: .milliseconds(750), scheduler: RunLoop.main)
             .sink { [weak self] searchQuery in
@@ -73,11 +108,6 @@ class SearchTableViewController: UITableViewController, UIAnimatable {
     private func setuptableView() {
         tableView.tableFooterView = UIView()
         tableView.isScrollEnabled = false
-    }
-
-    private func setupNavigationBar() {
-        navigationItem.searchController = searchController
-        navigationItem.title = "Search"
     }
     
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {

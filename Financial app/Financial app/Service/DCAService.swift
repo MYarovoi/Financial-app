@@ -42,7 +42,7 @@ struct DCAService {
         return pow(rate, (1 / years)) - 1
     }
     
-    private func getInvestmentAmount(initialInvestmentAmount: Double, monthlyDollarCostAvetagingAmount: Double, initialDateOfInvestmentIndex: Int) -> Double {
+    func getInvestmentAmount(initialInvestmentAmount: Double, monthlyDollarCostAvetagingAmount: Double, initialDateOfInvestmentIndex: Int) -> Double {
         var totalAmount = Double()
         totalAmount += initialInvestmentAmount
         let dollarCostAvetagingAmount = initialDateOfInvestmentIndex.doubleValue * monthlyDollarCostAvetagingAmount

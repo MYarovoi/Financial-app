@@ -31,6 +31,7 @@ class CalculatorTableViewController: UITableViewController {
     
     private var cancellables = Set<AnyCancellable>()
     private let dcaService = DCAService()
+    private let calculatorPresenter = CalculatorPresenter()
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -92,19 +93,20 @@ class CalculatorTableViewController: UITableViewController {
                   let initialDateOfInvestmentIndex = initialDateOfInvestmentIndex,
                   let asset = self?.asset else {  return }
             
-            let result = self?.dcaService.calculate(asset: asset, initialInvestmentAmount: initialInvestmentAmount.doubleValue, monthlyDollarCostAvetagingAmount: monthlyDollarCostAveragingAmount.doubleValue, initialDateOfInvestmentIndex: initialDateOfInvestmentIndex)
+            guard let this = self else { return }
             
-            let isProfitable = (result?.isProfitable == true)
-            let gainSymbol = isProfitable ? "+" : ""
+            let result = this.dcaService.calculate(asset: asset, initialInvestmentAmount: initialInvestmentAmount.doubleValue, monthlyDollarCostAvetagingAmount: monthlyDollarCostAveragingAmount.doubleValue, initialDateOfInvestmentIndex: initialDateOfInvestmentIndex)
             
-            self?.currentValueLabel.backgroundColor = (result?.isProfitable == true) ? .themeGreenShade : .themeRedShade
-            self?.currentValueLabel.text = result?.currentValue.currencyFormat
-            self?.investmentAmountLabel.text = result?.investmentAmount.toCurrencyFormat(hasDollarSymbol: false, hasDecimalPlaces: false)
-            self?.gainLabel.text = result?.gain.toCurrencyFormat(hasDollarSymbol: false, hasDecimalPlaces: false).prefix(withText: gainSymbol)
-            self?.yieldLabel.text = result?.yield.percentageFormat.prefix(withText: gainSymbol).addBrackets()
-            self?.yieldLabel.textColor = isProfitable ? .themeGreenShade : .themeRedShade
-            self?.anualReturnLabel.text = result?.annualReturn.percentageFormat
-            self?.anualReturnLabel.textColor = isProfitable ? .themeGreenShade : .themeRedShade
+            let presentation = this.calculatorPresenter.getPresentation(result: result)
+            
+            this.currentValueLabel.backgroundColor = presentation.currentValueLabelBackgroundColor
+            this.currentValueLabel.text = presentation.currentValueLabel
+            this.investmentAmountLabel.text = presentation.investmentAmountLabel
+            this.gainLabel.text = presentation.gainLabel
+            this.yieldLabel.text = presentation.yieldLabel
+            this.yieldLabel.textColor = presentation.yieldLabelTextColor
+            this.anualReturnLabel.text = presentation.anualReturnLabel
+            this.anualReturnLabel.textColor = presentation.anualReturnLabelTextColor
         }.store(in: &cancellables)
     }
     
